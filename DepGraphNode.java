@@ -5,13 +5,35 @@ public class DepGraphNode {
     private List<DepGraphNode> parents; // Parent nodes
     private List<DepGraphNode> children; // Child nodes
 
-    public DepGraphNode(String label, int ilocCode, int priority) {
+    public DepGraphNode(String label, int ilocCode) {
         this.label = label;
         this.ilocCode = ilocCode;
-        this.priority = priority;
+        this.priority = 0;
         this.parents = new ArrayList<>();
         this.children = new ArrayList<>();
     }
 
+    public List<DepGraphNode> getChildren(){
+        return this.children;
+    }
 
+    public List<DepGraphNode> getParents(){
+        return this.parents;
+    }
+
+    public String getLabel(){
+        return this.label;
+    }
+
+    public int getCode(){
+        return this.ilocCode;
+    }
+
+    public void setPriority(int priority){
+        this.priority = priority;
+    }
+
+    public int getPriority(){
+        return this.priority;
+    }
 }
