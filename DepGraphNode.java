@@ -1,12 +1,10 @@
 public class DepGraphNode {
-    private int nodeNum;
     private int[] nodeInfo;
     private int priority; // The number of cycles this will take plus all the ancestor node's priority
     private List<DepGraphNode> parents; // Parent nodes
     private List<DepGraphNode> children; // Child nodes
 
-    public DepGraphNode(int nodeNum, int[] nodeInfo) {
-        this.nodeNum = nodeNum;
+    public DepGraphNode(int[] nodeInfo) {
         this.nodeInfo = nodeInfo;
         this.priority = 0;
         this.parents = new ArrayList<>();
