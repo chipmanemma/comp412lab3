@@ -12,7 +12,7 @@ public class ILOCRenamer {
      * Rename IR registers to virtual register names
      * Returns the max live and max VR of all 
      */
-    public Pair<Integer, Integer> rename() {
+    public Integer rename() {
         int vrName = 0;
         int maxlive = 0; // Keep in mind if incrementing at use and decrementing at def this underestimates. Block might increment use that's never defined this overestimates. op might use the same value twice this will overestimate.
         int currlive = 0;
@@ -178,6 +178,6 @@ public class ILOCRenamer {
             } 
         } 
         //System.out.println("maxlive: " + maxlive + " maxVR: " + (vrName-1));
-        return new Pair<Integer, Integer>(maxlive, vrName-1);     
+        return vrName-1;     
     }
 }
