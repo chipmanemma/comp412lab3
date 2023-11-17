@@ -291,8 +291,7 @@ public class ILOCScheduler{
         // both stores things that can go in either
         // only one output can happen at a time
         int cycle = 1;
-        DepGraphNode inF0 = null;
-        DepGraphNode inF1 = null;
+        Queue<DepGraphNode> active = new PriorityQueue<>();
         
         // Load in leaves into ready
         for(DepGraphNode node : sourceToSink.keySet()){
@@ -310,71 +309,67 @@ public class ILOCScheduler{
             }
         }
         // While there's still something to schedule and something still running
-        while(f0.size() != 0 && f1.size() != 0 && both.size() != 0 && (inF0 != null || inF1 != null)){
+        while(f0.size() != 0 || f1.size() != 0 || both.size() != 0 || active.size() != 0){
             // pick an operation o for each functional unit move o from ready to active
             // Should be highest priority
-            if(inF0 == null){
-                DepGraphNode f0Node = f0.poll();
-                if(f0Node == null){
-                    f0Node = both.poll();
+            // look in all of them and take the two highest priority
+            DepGraphNode f0Prior = f0.peek();
+            DepGraphNode f1Prior = f1.peek();
+            DepGraphNode bothPrior = both.peek();
+            // nothing is ready
+            if(f0Prior != null && f1Prior == null && bothPrior == null){
+                // nops for everything
+            }
+            else if(f0Prior != null && f1Prior == null && bothPrior == null){
+                // Schedule only f0 in active
+                f0Prior = f0.poll();
+                // Set end cycle f0
+                f0Prior.setEndCycle(cycle);
+            }
+            else if(f0Prior != null && f1Prior != null && bothPrior == null){
+                // Schedule f0 and f1
+                f0Prior = f0.poll();
+                f1Prior = f1.poll();
+                // Set end cycle f0
+                f0Prior.setEndCycle(cycle);
+                // Set end cycle f1
+                f1Prior.setEndCycle(cycle);
+            }
+            else if(f0Prior != null && f1Prior != null && bothPrior != null){
+                // Check which two are biggest
+                // f0 f1
+                if(f0Prior.getPriority() > f1Prior.getPriority() && f0Prior.getPriority() > bothPrior.getPriority() && f1Prior.getPriority() > f0Prior.getPriority()){
+                    f0Prior = f0.poll();
+                    f1Prior = f1.poll();
+                    // Set end cycle f0
+                    f0Prior.setEndCycle(cycle);
+                    // Set end cycle f1
+                    f1Prior.setEndCycle(cycle);
                 }
-                inF0 = f0Node;
-                // Set end cycle
-                if(inF0 != null){
-                    if(inF0.getOp() == OpCode.STORE.getValue() || inF0.getOp() == OpCode.LOAD.getValue()){
-                        inF0.setEndCycle(cycle + 5);
-                    }
-                    else if(inF0.getOp() == OpCode.MULT.getValue()){
-                        inF0.setEndCycle(cycle + 3);
-                    }
-                    else{
-                        inF0.setEndCycle(cycle + 1);
-                    }
+                // f0 both
+                else if(f0Prior.getPriority() > f1Prior.getPriority() && f0Prior.getPriority() > bothPrior.getPriority() && f1Prior.getPriority() < f0Prior.getPriority()) {
+                    f0Prior = f0.poll();
+                    bothPrior = both.poll();
+                    // Set end cycle f0
+                    f0Prior.setEndCycle(cycle);
+                    // Set end cycle f1
+                    bothPrior.setEndCycle(cycle);
+                }
+                // both f1 
+                else{
+                    f1Prior = f1.poll();
+                    bothPrior = both.poll();
+                    // Set end cycle f0
+                    f1Prior.setEndCycle(cycle);
+                    // Set end cycle f1
+                    bothPrior.setEndCycle(cycle);
                 }
             }
-
-            if(inF1 == null){
-                DepGraphNode f1Node = f1.poll();
-                if(f1Node == null){
-                    f1Node = both.poll();
-                }
-                inF1 = f1Node;
-                // Set end cycle
-                if(inF1 != null){
-                    if(inF1.getOp() == OpCode.STORE.getValue() || inF1.getOp() == OpCode.LOAD.getValue()){
-                        inF1.setEndCycle(cycle + 5);
-                    }
-                    else if(inF1.getOp() == OpCode.MULT.getValue()){
-                        inF1.setEndCycle(cycle + 3);
-                    }
-                    else{
-                        inF1.setEndCycle(cycle + 1);
-                    }
-                }
-            }
-            printILOCHelper(inF0, inF1);
-            cycle = cycle + 1;
-
-            // find each op o in active that retires in this cycle and remove from active
-            if(inF0 != null && inF0.getEndCycle() == cycle){
-                inF0.setStatus(3);
-                handleChildren(inF0);
-                inF0 = null;
-            }
-            if(inF1 != null && inF1.getEndCycle() == cycle){
-                inF1.setStatus(3);
-                handleChildren(inF1);
-                inF1 = null;
-            }
-            
-            // For each multi-cycle operation o in Active 
-                // check ops that depend on o for early releases
-                // add any early releases to Ready
-            
         }
+
     }
 
-    // This is to ensure the out count for a store is correct
+    // This is to ensure the out count for a store is correct during the building of the graph
     public void checkExistingEdge(DepGraphNode source){
         Set<DepGraphNode> seen = new HashSet<>();
         // Check through all the edges from store and see if there are any doubled up nodes
@@ -431,6 +426,7 @@ public class ILOCScheduler{
         
     }
 
+    // When a parent is done, checks if the children become ready
     public void handleChildren(DepGraphNode parent){
         // For every node that depends on the parameterized node
         for (Pair<DepGraphNode, Integer> node : sinkToSource.get(parent)){

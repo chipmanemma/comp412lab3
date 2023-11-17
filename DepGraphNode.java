@@ -48,8 +48,17 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
         return this.nodeInfo[OpInfoEnum.LINE.getValue()];
     }
 
-    public void setEndCycle(int endCycle) {
-        this.endCycle = endCycle;
+    public void setEndCycle(int currCycle) {
+        if(this.getOp() == OpCode.STORE.getValue() || this.getOp() == OpCode.LOAD.getValue()){
+            this.endCycle = currCycle + 5;
+        }
+        else if(this.getOp() == OpCode.MULT.getValue()){
+            this.endCycle = currCycle + 3;
+        }
+        else{
+            this.endCycle = currCycle + 1;
+        }
+
     }
 
     public int getEndCycle(){
