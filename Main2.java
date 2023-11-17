@@ -10,11 +10,11 @@ public class Main2 {
             ILOCRenamer renamer = new ILOCRenamer(res);
             Integer maxVr = renamer.rename();
             System.out.println(maxVr);
-            res.getItem1().printVRCodeRep();
+            //res.getItem1().printVRCodeRep();
             ILOCScheduler scheduler = new ILOCScheduler(res.getItem1(), maxVr);
-            scheduler.buildGraph();
+            scheduler.buildGraph(); // call dot -T pdf graphText.dot > graphText.pdf
+            scheduler.computePriorities();
         }
-        
     }
 
     /**
@@ -29,7 +29,7 @@ public class Main2 {
                 System.out.println("This is lab 3 for comp 412\nAvailable parameters are: \n\t-h: lists available commands\n\t<name>: The file to be scheduled");
                 return false;
             }
-            else if (args.length > 2) {
+            else if (args.length > 1) {
                 System.err.println("ERROR: Too many command line arguments");
                 System.out.println("This is lab 3 for comp 412\nAvailable parameters are: \n\t-h: lists available commands\n\t<name>: The file to be scheduled");
                 return false;

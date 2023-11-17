@@ -180,6 +180,8 @@ public class ILOCScheduler{
             else if(opData[OpInfoEnum.OP.getValue()] == OpCode.LOAD.getValue()){
                 sourceToSink.get(currNode).add(new Pair<>(vrToNodes[opData[OpInfoEnum.VR1.getValue()]],0));
                 sinkToSource.get(vrToNodes[opData[OpInfoEnum.VR1.getValue()]]).add(new Pair<>(currNode, 0));
+                currNode.incrementOut();
+                vrToNodes[opData[OpInfoEnum.VR1.getValue()]].incrementIn();
                 graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR1.getValue()]].getLine() + "[label=\"Data, r" + opData[OpInfoEnum.VR1.getValue()] + "\"];\n");
                 // After a store, use a conflict edge
                 if(lastStore != null){
@@ -195,6 +197,12 @@ public class ILOCScheduler{
         } 
         graph.append("}");
         viewGraph(graph);
+        /**
+         * for(DepGraphNode node: sourceToSink.keySet()){
+         *      System.out.println(node.getILOCString() + " In: " + node.getInCount() + " Out: " + node.getOutCount());
+         * }
+         */
+        
     }
 
     // Compute priorities
@@ -208,7 +216,7 @@ public class ILOCScheduler{
         for(DepGraphNode node : sinkToSource.keySet()){
             if(sinkToSource.get(node).size() == 0){
                 visit.add(node);
-                if(node.getOp() == OpCode.LOAD.getValue() || node.getOp() == OpCode.LOAD.getValue()){
+                if(node.getOp() == OpCode.LOAD.getValue() || node.getOp() == OpCode.STORE.getValue()){
                     node.setPriority(5);
                 }
                 else if(node.getOp() == OpCode.MULT.getValue()){
@@ -217,6 +225,7 @@ public class ILOCScheduler{
                 else{
                     node.setPriority(1);
                 }
+                System.out.println(node.getILOCString() + " Priority: " + node.getPriority());
             }
         }
 
@@ -249,12 +258,14 @@ public class ILOCScheduler{
                     }
                     // check if current priority is bigger already
                     if(child.getItem1().getPriority() < trialPriority){
+                        //System.out.println("trialPriority for " + child.getItem1().getILOCString() + ": " + trialPriority);
                         child.getItem1().setPriority(trialPriority);
                     }
                 }
                 child.getItem1().decrementIn();
                 if(child.getItem1().getInCount() == 0){
                     visit.add(child.getItem1());
+                    System.out.println(child.getItem1().getILOCString() + " Priority: " + child.getItem1().getPriority());
                 }
             }
         }

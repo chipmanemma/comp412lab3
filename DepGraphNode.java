@@ -126,7 +126,7 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
         }
         // loadI
         else if (opCode == OpCode.LOADI.getValue()) {
-            return this.nodeInfo[OpInfoEnum.LINE.getValue()]  + "[label=\"" + this.nodeInfo[OpInfoEnum.LINE.getValue()] + ": " + OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + this.nodeInfo[OpInfoEnum.SR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()] + "\"];";
+            return this.nodeInfo[OpInfoEnum.LINE.getValue()]  + "[label=\"" + this.nodeInfo[OpInfoEnum.LINE.getValue()] + ": " + OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " " + this.nodeInfo[OpInfoEnum.SR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()] + "\"];";
         }
         // Arithops
         else if (opCode >= 3 && opCode <= 7) {
@@ -134,7 +134,7 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
         }
         // output
         else if (opCode == OpCode.OUTPUT.getValue()) {
-            return this.nodeInfo[OpInfoEnum.LINE.getValue()]  + "[label=\"" + this.nodeInfo[OpInfoEnum.LINE.getValue()] + ": " + OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + this.nodeInfo[OpInfoEnum.SR1.getValue()] + "\"];";
+            return this.nodeInfo[OpInfoEnum.LINE.getValue()]  + "[label=\"" + this.nodeInfo[OpInfoEnum.LINE.getValue()] + ": " + OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " " + this.nodeInfo[OpInfoEnum.SR1.getValue()] + "\"];";
         }
         // nop
         else {
