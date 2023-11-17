@@ -205,10 +205,11 @@ public class ILOCScheduler{
                 checkExistingEdge(node);
             }
         }
-        
+        /*
         for(DepGraphNode node: sourceToSink.keySet()){
             System.out.println(node.getILOCString() + " In: " + node.getInCount() + " Out: " + node.getOutCount());
         }
+        */
     }
 
     // Compute priorities
@@ -401,16 +402,33 @@ public class ILOCScheduler{
         }
     }
 
-    public void printILOCHelper(DepGraphNode f0Node, DepGraphNode f1Node){
-        if(f0Node != null && f1Node != null){
-            System.out.println("[ " + f0Node.getILOCString() + "; " + f1Node.getILOCString() + "]");
+    // Helper to print out what's active in a given cycle
+    public void printILOCHelper(DepGraphNode f0Node, DepGraphNode f1Node, boolean f0Changed, boolean f1Changed){
+        // f0 new f1 new
+        if(f0Node != null && f1Node != null && f0Changed && f1Changed){
+            System.out.println("[ " + f0Node.getILOCString() + "; " + f1Node.getILOCString() + " ]");
         }
-        else if(f0Node != null && f1Node == null){
-            System.out.println("[ " + f0Node.getILOCString() + "; nop]");
+        // f0 multiop f1 empty
+        else if(f0Node != null && f1Node == null && !f0Changed){
+            System.out.println("[ nop; nop ]");
         }
+        // f0 empty f1 multiOp
+        else if(f0Node == null && f1Node != null && !f1Changed){
+            System.out.println("[ nop; nop ]");
+        }
+        // f0 multiop f1 multiop
+        else if(!f0Changed && !f1Changed){
+            System.out.println("[ nop; nop ]");
+        }
+        // f0 multiop f1 new
+        else if(!f0Changed && f1Node != null && f1Changed){
+            System.out.println("[ nop; " + f1Node.getILOCString() + " ]");
+        }
+        // f0 new f1 multiop
         else if(f0Node == null && f1Node != null){
-            System.out.println("[ nop; " + f1Node.getILOCString() + "]");
+            System.out.println("[ " + f1Node.getILOCString() + "; nop ]");
         }
+        
     }
 
     public void handleChildren(DepGraphNode parent){
