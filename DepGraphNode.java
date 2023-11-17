@@ -39,6 +39,14 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
         return this.nodeInfo[OpInfoEnum.LINE.getValue()];
     }
 
+    public void setEndCycle(int endCycle) {
+        this.endCycle = endCycle;
+    }
+
+    public int getEndCycle(){
+        return this.endCycle;
+    }
+
     // Increments the node's in count
     public void incrementIn(){
         this.inEdges = inEdges + 1;
@@ -61,6 +69,13 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
         this.outEdges = outEdges - 1;
     }
 
+    public int getInCount(){
+        return this.inEdges;
+    }
+
+    public int getOutCount(){
+        return this.outEdges;
+    }
     // Sets the priority of the node
     public void setPriority(int priority){
         this.priority = priority;
@@ -82,24 +97,25 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
         return this.status;
     }
 
-    public void printILOC(){
+    public String getILOCString(){
         int opCode = this.nodeInfo[OpInfoEnum.OP.getValue()];
         // load or store
         if (opCode == OpCode.LOAD.getValue() || opCode == OpCode.STORE.getValue()) {
-            System.out.println(OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " r"+ this.nodeInfo[OpInfoEnum.VR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()]);
+            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " r"+ this.nodeInfo[OpInfoEnum.VR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
         }
         // loadI
         else if (opCode == OpCode.LOADI.getValue()) {
-            System.out.println(OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + this.nodeInfo[OpInfoEnum.SR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()]);
+            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + this.nodeInfo[OpInfoEnum.SR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
         }
         // Arithops
         else if (opCode >= 3 && opCode <= 7) {
-            System.out.println(OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + "r" + this.nodeInfo[OpInfoEnum.VR1.getValue()] + ", r" + this.nodeInfo[OpInfoEnum.VR2.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()]);
+            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + "r" + this.nodeInfo[OpInfoEnum.VR1.getValue()] + ", r" + this.nodeInfo[OpInfoEnum.VR2.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
         }
         // output
         else if (opCode == OpCode.OUTPUT.getValue()) {
-            System.out.println(OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + this.nodeInfo[OpInfoEnum.SR1.getValue()]);
+            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + this.nodeInfo[OpInfoEnum.SR1.getValue()];
         }
+        return "";
     }
 
     public String toString(){

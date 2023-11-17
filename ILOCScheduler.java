@@ -254,16 +254,8 @@ public class ILOCScheduler{
                     }
                 }
                 child.getItem1().decrementIn();
-                if(child.getItem1().getPriority() == 0){
-                    if(child.getItem1().getOp() == OpCode.STORE.getValue() || child.getItem1().getOp() == OpCode.LOAD.getValue()){
-                        f0.add(child.getItem1());
-                    }
-                    else if(child.getItem1().getOp() == OpCode.MULT.getValue()){
-                        f1.add(child.getItem1());
-                    }
-                    else{
-                        both.add(child.getItem1());
-                    }
+                if(child.getItem1().getInCount() == 0){
+                    visit.add(child.getItem1());
                 }
             }
         }
@@ -277,20 +269,56 @@ public class ILOCScheduler{
         // both stores things that can go in either
         // only one output can happen at a time
         int cycle = 1;
-
-        List<DepGraphNode> ready = new ArrayList<>(); // Priority is included in the node
-        List<DepGraphNode> active = new ArrayList<>(); // Integer is the cycle to remove the thing
+        DepGraphNode inF0 = null;
+        DepGraphNode inF1 = null;
+        
         // Load in leaves into ready
         for(DepGraphNode node : sourceToSink.keySet()){
             if(sourceToSink.get(node).size() == 0){
-                ready.add(node);
+                if(node.getOp() == OpCode.STORE.getValue() || node.getOp() == OpCode.LOAD.getValue()){
+                        f0.add(node);
+                    }
+                    else if(node.getOp() == OpCode.MULT.getValue()){
+                        f1.add(node);
+                    }
+                    else{
+                        both.add(node);
+                    }
+                node.setStatus(1);
             }
         }
-        while(ready.size() != 0 && active.size() != 0){
+
+        while(f0.size() != 0 && f1.size() != 0 && both.size() != 0 && inF0 != null && inF1 != null){
             // pick an operation o for each functional unit move o from ready to active
             // Should be highest priority
+            if(inF0 == null){
+                DepGraphNode f0Node = f0.poll();
+                if(f0Node == null){
+                    f0Node = both.poll();
+                }
+                inF0 = f0Node;
+            }
+
+            if(inF1 == null){
+                DepGraphNode f1Node = f1.poll();
+                if(f1Node == null){
+                    f1Node = both.poll();
+                }
+                inF1 = f1Node;
+            }
+            printILOCHelper(inF0, inF1);
             cycle = cycle + 1;
+
+
             // find each op o in active that retires in this cycle and remove from active
+            if(inF0 != null && inF0.getEndCycle() == cycle){
+                inF0.setStatus(3);
+                inF0 = null;
+            }
+            if(inF1 != null && inF1.getEndCycle() == cycle){
+                inF1.setStatus(3);
+                inF1 = null;
+            }
             // For each op that depends on o
                 // if d is now ready, add d to the ready set
             // For each multi-cycle operation o in Active 
@@ -306,13 +334,19 @@ public class ILOCScheduler{
     // This should create a dot file that you can use in graphviz
     public void viewGraph(StringBuilder graphInfo){
         try {
-            File graphFile = new File("comp412lab3/graphText.dot");
+            File graphFile = new File("graphText.dot");
             FileWriter writer = new FileWriter(graphFile);
             writer.write(graphInfo.toString());
             writer.flush();
             writer.close();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void printILOCHelper(DepGraphNode f0Node, DepGraphNode f1Node){
+        if(f0Node != null && f1Node != null){
+            System.out.println("[ " + inF0.getILOCString() + "; " + inF1.getILOCString() + "]");
         }
     }
 }
