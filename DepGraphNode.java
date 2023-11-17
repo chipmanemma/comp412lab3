@@ -1,6 +1,3 @@
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 
 public class DepGraphNode implements Comparable<DepGraphNode>{
     private int[] nodeInfo;
@@ -28,6 +25,18 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
             return 1;
         }
         return 0;
+    }
+
+    // Checks equality for purposes of knowing if a node is the same as itself
+    public boolean equals(Object obj){
+        if(!(obj instanceof DepGraphNode)){
+            return false;
+        }
+        DepGraphNode node = (DepGraphNode)obj;
+        if(node.getLine() == this.nodeInfo[OpInfoEnum.LINE.getValue()]){
+            return true;
+        }
+        return false;
     }
 
     // Used to get the associated ILOC operation
