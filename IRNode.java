@@ -70,7 +70,7 @@ public class IRNode {
         }
         // nop
         else {
-            System.out.print("\n");
+            System.out.print("");
         }
     }
 
@@ -110,7 +110,7 @@ public class IRNode {
         if (this.data[OpInfoEnum.NU3.getValue()] != -1) {
             System.out.print(" NU3: " + this.data[OpInfoEnum.NU3.getValue()]);
         }
-        System.out.print("\n");
+        System.out.print("");
     }
 
     public void printFullIRNode() {

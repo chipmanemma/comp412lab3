@@ -105,11 +105,11 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
         }
         // loadI
         else if (opCode == OpCode.LOADI.getValue()) {
-            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + this.nodeInfo[OpInfoEnum.SR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
+            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " " + this.nodeInfo[OpInfoEnum.SR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
         }
         // Arithops
         else if (opCode >= 3 && opCode <= 7) {
-            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + "r" + this.nodeInfo[OpInfoEnum.VR1.getValue()] + ", r" + this.nodeInfo[OpInfoEnum.VR2.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
+            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " r" + this.nodeInfo[OpInfoEnum.VR1.getValue()] + ", r" + this.nodeInfo[OpInfoEnum.VR2.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
         }
         // output
         else if (opCode == OpCode.OUTPUT.getValue()) {
@@ -122,19 +122,19 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
         int opCode = this.nodeInfo[OpInfoEnum.OP.getValue()];
         // load or store
         if (opCode == OpCode.LOAD.getValue() || opCode == OpCode.STORE.getValue()) {
-            return this.nodeInfo[OpInfoEnum.LINE.getValue()]  + "[label=\"" + this.nodeInfo[OpInfoEnum.LINE.getValue()] + ": " + this.nodeInfo[OpInfoEnum.OP.getValue()] + " r"+ this.nodeInfo[OpInfoEnum.VR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()] + "\"];";
+            return this.nodeInfo[OpInfoEnum.LINE.getValue()]  + "[label=\"" + this.nodeInfo[OpInfoEnum.LINE.getValue()] + ": " + OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " r"+ this.nodeInfo[OpInfoEnum.VR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()] + "\"];";
         }
         // loadI
         else if (opCode == OpCode.LOADI.getValue()) {
-            return this.nodeInfo[OpInfoEnum.LINE.getValue()]  + "[label=\"" + this.nodeInfo[OpInfoEnum.LINE.getValue()] + ": " + this.nodeInfo[OpInfoEnum.OP.getValue()] + this.nodeInfo[OpInfoEnum.SR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()] + "\"];";
+            return this.nodeInfo[OpInfoEnum.LINE.getValue()]  + "[label=\"" + this.nodeInfo[OpInfoEnum.LINE.getValue()] + ": " + OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + this.nodeInfo[OpInfoEnum.SR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()] + "\"];";
         }
         // Arithops
         else if (opCode >= 3 && opCode <= 7) {
-            return this.nodeInfo[OpInfoEnum.LINE.getValue()]  + "[label=\"" + this.nodeInfo[OpInfoEnum.LINE.getValue()] + ": " + this.nodeInfo[OpInfoEnum.OP.getValue()] + "r" + this.nodeInfo[OpInfoEnum.VR1.getValue()] + ", r" + this.nodeInfo[OpInfoEnum.VR2.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()] + "\"];";
+            return this.nodeInfo[OpInfoEnum.LINE.getValue()]  + "[label=\"" + this.nodeInfo[OpInfoEnum.LINE.getValue()] + ": " + OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " r" + this.nodeInfo[OpInfoEnum.VR1.getValue()] + ", r" + this.nodeInfo[OpInfoEnum.VR2.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()] + "\"];";
         }
         // output
         else if (opCode == OpCode.OUTPUT.getValue()) {
-            return this.nodeInfo[OpInfoEnum.LINE.getValue()]  + "[label=\"" + this.nodeInfo[OpInfoEnum.LINE.getValue()] + ": " + this.nodeInfo[OpInfoEnum.OP.getValue()] + this.nodeInfo[OpInfoEnum.SR1.getValue()] + "\"];";
+            return this.nodeInfo[OpInfoEnum.LINE.getValue()]  + "[label=\"" + this.nodeInfo[OpInfoEnum.LINE.getValue()] + ": " + OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + this.nodeInfo[OpInfoEnum.SR1.getValue()] + "\"];";
         }
         // nop
         else {

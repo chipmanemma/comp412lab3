@@ -2,13 +2,15 @@ public class Main2 {
     public static void main(String[] args) throws Exception{
         // If we need to do more
         if (parseCommandLines(args)) {
-            ILOCParser parser = new ILOCParser(new ILOCScanner(args[1]));
+            ILOCParser parser = new ILOCParser(new ILOCScanner(args[0]));
             Pair<IRList, Integer> res = parser.parse();
             if (res.getItem2() == -1) {
                 return;
             }
             ILOCRenamer renamer = new ILOCRenamer(res);
             Integer maxVr = renamer.rename();
+            System.out.println(maxVr);
+            res.getItem1().printVRCodeRep();
             ILOCScheduler scheduler = new ILOCScheduler(res.getItem1(), maxVr);
             scheduler.buildGraph();
         }
@@ -33,6 +35,7 @@ public class Main2 {
                 return false;
             }
             else{
+                System.out.println("running");
                 return true;
             }
         }

@@ -366,7 +366,7 @@ public class ILOCParser {
         CatLex word = this.scanner.nextToken();
         if (word.getOpCategory() == OpCategory.EOL.getValue() || word.getOpCategory() == OpCategory.EOF.getValue()) {
             //System.out.println("success parsing NOP on line " + word.getLine());
-            ir.insertNode(word.getLine(), OpCode.NOP.getValue(), -1, -1, -1);              
+            //ir.insertNode(word.getLine(), OpCode.NOP.getValue(), -1, -1, -1);              
             return true;  
         }
         else {

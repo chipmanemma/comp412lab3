@@ -1,4 +1,3 @@
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -25,7 +24,7 @@ public class ILOCScheduler{
 
     public ILOCScheduler(IRList ir, int maxVR){
         this.ir = ir;
-        this.vrToNodes = new DepGraphNode[maxVR];
+        this.vrToNodes = new DepGraphNode[maxVR + 1];
         this.sourceToSink = new HashMap<>();
         this.sinkToSource = new HashMap<>();
     }
@@ -48,7 +47,7 @@ public class ILOCScheduler{
         DepGraphNode lastStore = null;
         DepGraphNode lastOutput = null;
         StringBuilder graph = new StringBuilder();
-        graph.append("digraph test\n{");
+        graph.append("digraph test\n{\n");
         // Algo: 
         // Create an empty map M => vrToNodes in global
         IRNode currOp = ir.getHead();
@@ -62,7 +61,7 @@ public class ILOCScheduler{
             // Make sure to add node to either source or sink
             sourceToSink.put(currNode, new HashSet<Pair<DepGraphNode, Integer>>());
             sinkToSource.put(currNode, new HashSet<Pair<DepGraphNode, Integer>>());
-            
+            //System.out.println("On node: " + currNode.getILOCString());
             //if o defines vri
                 //set M(vri) to o
                 // Store and output are the only ones to not define a reg (aside from nop)
@@ -87,8 +86,8 @@ public class ILOCScheduler{
                     currNode.incrementOut();
                     vrToNodes[opData[OpInfoEnum.VR1.getValue()]].incrementIn();
                     vrToNodes[opData[OpInfoEnum.VR2.getValue()]].incrementIn();
-                    graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR1.getValue()]].getLine() + "[label=\"Data, " + opData[OpInfoEnum.VR1.getValue()] + "\"];");
-                    graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR2.getValue()]].getLine() + "[label=\"Data, " + opData[OpInfoEnum.VR2.getValue()] + "\"];");
+                    graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR1.getValue()]].getLine() + "[label=\"Data, r" + opData[OpInfoEnum.VR1.getValue()] + "\"];\n");
+                    graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR2.getValue()]].getLine() + "[label=\"Data, r" + opData[OpInfoEnum.VR2.getValue()] + "\"];\n");
                 }
                 // only one VR is really used
                 else{
@@ -97,7 +96,7 @@ public class ILOCScheduler{
                     sinkToSource.get(vrToNodes[opData[OpInfoEnum.VR1.getValue()]]).add(new Pair<>(currNode, 0));
                     currNode.incrementOut();
                     vrToNodes[opData[OpInfoEnum.VR1.getValue()]].incrementIn();
-                    graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR1.getValue()]].getLine() + "[label=\"Data, " + opData[OpInfoEnum.VR1.getValue()] + "\"];");
+                    graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR1.getValue()]].getLine() + "[label=\"Data, r" + opData[OpInfoEnum.VR1.getValue()] + "\"];\n");
                 }
             }   
 
@@ -114,8 +113,8 @@ public class ILOCScheduler{
                     currNode.incrementOut();
                     vrToNodes[opData[OpInfoEnum.VR1.getValue()]].incrementIn();
                     vrToNodes[opData[OpInfoEnum.VR3.getValue()]].incrementIn();
-                    graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR1.getValue()]].getLine() + "[label=\"Data, " + opData[OpInfoEnum.VR1.getValue()] + "\"];");
-                    graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR3.getValue()]].getLine() + "[label=\"Data, " + opData[OpInfoEnum.VR3.getValue()] + "\"];");
+                    graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR1.getValue()]].getLine() + "[label=\"Data, r" + opData[OpInfoEnum.VR1.getValue()] + "\"];\n");
+                    graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR3.getValue()]].getLine() + "[label=\"Data, r" + opData[OpInfoEnum.VR3.getValue()] + "\"];\n");
                 }
                 // only one VR is really used
                 else{
@@ -123,7 +122,7 @@ public class ILOCScheduler{
                     sinkToSource.get(vrToNodes[opData[OpInfoEnum.VR1.getValue()]]).add(new Pair<>(currNode, 0));
                     currNode.incrementOut();
                     vrToNodes[opData[OpInfoEnum.VR1.getValue()]].incrementIn();
-                    graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR1.getValue()]].getLine() + "[label=\"Data, " + opData[OpInfoEnum.VR1.getValue()] + "\"];");
+                    graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR1.getValue()]].getLine() + "[label=\"Data, r" + opData[OpInfoEnum.VR1.getValue()] + "\"];\n");
                 }
                 // After load or output, use serialization edge
                 if(lastLoads.size() != 0){
@@ -132,16 +131,16 @@ public class ILOCScheduler{
                         sinkToSource.get(node).add(new Pair<>(currNode, 1));
                         currNode.incrementOut();
                         node.incrementIn();
-                        graph.append(currNode.getLine() + " -> " + node.getLine() + "[label=\"Serial\"];");
+                        graph.append(currNode.getLine() + " -> " + node.getLine() + "[label=\"Serial\"];\n");
                     }   
                 }
                 if(lastOutputs.size() != 0){
-                    for(DepGraphNode node : lastLoads){
+                    for(DepGraphNode node : lastOutputs){
                         sourceToSink.get(currNode).add(new Pair<>(node, 1));
                         sinkToSource.get(node).add(new Pair<>(currNode, 1));
                         currNode.incrementOut();
                         node.incrementIn();
-                        graph.append(currNode.getLine() + " -> " + node.getLine() + "[label=\"Serial\"];");
+                        graph.append(currNode.getLine() + " -> " + node.getLine() + "[label=\"Serial\"];\n");
                     }   
                 }
                 // After store, use serialization edge
@@ -150,7 +149,7 @@ public class ILOCScheduler{
                     sinkToSource.get(lastStore).add(new Pair<>(currNode, 1));
                     currNode.incrementOut();
                     lastStore.incrementIn();
-                    graph.append(currNode.getLine() + " -> " + lastStore.getLine() + "[label=\"Serial\"];");
+                    graph.append(currNode.getLine() + " -> " + lastStore.getLine() + "[label=\"Serial\"];\n");
                 }
                 lastStore = currNode;
                 lastLoads.clear();
@@ -164,7 +163,7 @@ public class ILOCScheduler{
                     sinkToSource.get(lastStore).add(new Pair<>(currNode, 2));
                     currNode.incrementOut();
                     lastStore.incrementIn();
-                    graph.append(currNode.getLine() + " -> " + lastStore.getLine() + "[label=\"Conflict\"];");
+                    graph.append(currNode.getLine() + " -> " + lastStore.getLine() + "[label=\"Conflict\"];\n");
                 }
                 // After output, use a serialization edge
                 if(lastOutput != null){
@@ -172,7 +171,7 @@ public class ILOCScheduler{
                     sinkToSource.get(lastOutput).add(new Pair<>(currNode, 1));
                     currNode.incrementOut();
                     lastOutput.incrementIn();
-                    graph.append(currNode.getLine() + " -> " + lastOutput.getLine() + "[label=\"Serial\"];");
+                    graph.append(currNode.getLine() + " -> " + lastOutput.getLine() + "[label=\"Serial\"];\n");
                 }
                 lastOutput = currNode;
                 lastOutputs.add(currNode);
@@ -181,14 +180,14 @@ public class ILOCScheduler{
             else if(opData[OpInfoEnum.OP.getValue()] == OpCode.LOAD.getValue()){
                 sourceToSink.get(currNode).add(new Pair<>(vrToNodes[opData[OpInfoEnum.VR1.getValue()]],0));
                 sinkToSource.get(vrToNodes[opData[OpInfoEnum.VR1.getValue()]]).add(new Pair<>(currNode, 0));
-                graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR1.getValue()]].getLine() + "[label=\"Data, " + opData[OpInfoEnum.VR1.getValue()] + "\"];");
+                graph.append(currNode.getLine() + " -> " + vrToNodes[opData[OpInfoEnum.VR1.getValue()]].getLine() + "[label=\"Data, r" + opData[OpInfoEnum.VR1.getValue()] + "\"];\n");
                 // After a store, use a conflict edge
                 if(lastStore != null){
                     sourceToSink.get(currNode).add(new Pair<>(lastStore, 2));
-                    sinkToSource.get(lastOutput).add(new Pair<>(currNode, 2));
+                    sinkToSource.get(lastStore).add(new Pair<>(currNode, 2));
                     currNode.incrementOut();
                     lastStore.incrementIn();
-                    graph.append(currNode.getLine() + " -> " + lastStore.getLine() + "[label=\"Conflict\"];");
+                    graph.append(currNode.getLine() + " -> " + lastStore.getLine() + "[label=\"Conflict\"];\n");
                 }
                 lastLoads.add(currNode);
             }
@@ -346,7 +345,13 @@ public class ILOCScheduler{
 
     public void printILOCHelper(DepGraphNode f0Node, DepGraphNode f1Node){
         if(f0Node != null && f1Node != null){
-            System.out.println("[ " + inF0.getILOCString() + "; " + inF1.getILOCString() + "]");
+            System.out.println("[ " + f0Node.getILOCString() + "; " + f1Node.getILOCString() + "]");
+        }
+        else if(f0Node != null && f1Node == null){
+            System.out.println("[ " + f0Node.getILOCString() + "; nop]");
+        }
+        else if(f0Node == null && f1Node != null){
+            System.out.println("[ nop; " + f1Node.getILOCString() + "]");
         }
     }
 }
