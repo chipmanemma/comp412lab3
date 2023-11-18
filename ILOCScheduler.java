@@ -205,11 +205,11 @@ public class ILOCScheduler{
                 checkExistingEdge(node);
             }
         }
-        
+        /* 
         for(DepGraphNode node: sourceToSink.keySet()){
             System.out.println(node.getILOCString() +  " Out: " + node.getOutCount());
         }
-        
+        */
     }
 
     // Compute priorities
@@ -532,16 +532,21 @@ public class ILOCScheduler{
 
     // When a parent is done, checks if the children become ready
     public void handleChildren(DepGraphNode parent){
+        List<DepGraphNode> seen = new ArrayList<>();
         System.out.println("parent: " + parent.getILOCString());
         // For every node that depends on the parameterized node
         for (Pair<DepGraphNode, Integer> node : sinkToSource.get(parent)){
             DepGraphNode dependent = node.getItem1();
-            dependent.decrementOut();
-            // All nodes this node depends on are done 
-            if(dependent.getOutCount() == 0){
-                System.out.println("Moving: " + dependent.getILOCString());
-                moveToReady(dependent);
-            }
+            // Avoid double counting
+            if(!seen.contains(dependent)){
+                dependent.decrementOut();
+                // All nodes this node depends on are done 
+                if(dependent.getOutCount() == 0){
+                    System.out.println("Moving: " + dependent.getILOCString());
+                    moveToReady(dependent);
+                }
+                seen.add(dependent);
+            } 
         }
     }
 
@@ -563,7 +568,7 @@ public class ILOCScheduler{
         for(DepGraphNode node : toMove){
             // If the parent is the only one node is waiting on
             if(node.getOutCount() == 1){
-                System.out.println("Early release " + node.getILOCString());
+                //System.out.println("Early release " + node.getILOCString());
                 // Decrement it so if it get's decremented later on it will = -1 and not be moved to ready again
                 node.decrementOut();
                 moveToReady(node);
