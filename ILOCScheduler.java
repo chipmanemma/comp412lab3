@@ -302,6 +302,7 @@ public class ILOCScheduler{
         }
         // While there's still something to schedule and something still running
         while(f0.size() != 0 || f1.size() != 0 || both.size() != 0 || active.size() != 0){
+            //System.out.println("cycle: " + cycle);
             //System.out.println("f0: " + f0.size() + " f1: " + f1.size() + " both: " + both.size() + " active: " + active.size());
             // pick an operation o for each functional unit move o from ready to active
             // Should be highest priority
@@ -310,10 +311,11 @@ public class ILOCScheduler{
             
             // increment cycle
             cycle = cycle + 1;
-            
+            //System.out.println((cycle - 1) + " -> " + cycle);
             toRemove.clear();
             // find each op o in active that retires in this cycle and remove from active
             for(DepGraphNode activeNode : active){
+               // System.out.println("Node: " + activeNode.getILOCString() + " End cycle: " + activeNode.getEndCycle());
                 if(activeNode.getEndCycle() == cycle){
                     activeNode.setStatus(3);
                     handleChildren(activeNode);
@@ -362,7 +364,7 @@ public class ILOCScheduler{
     }
 
     public void moveToReady(DepGraphNode node){
-        System.out.println("moving " + node.getILOCString() + " to ready");
+        //System.out.println("moving " + node.getILOCString() + " to ready");
         if(node.getOp() == OpCode.STORE.getValue() || node.getOp() == OpCode.LOAD.getValue()){
             f0.add(node);
         }
@@ -383,6 +385,7 @@ public class ILOCScheduler{
         // nothing is ready
         if(f0Prior == null && f1Prior == null && bothPrior == null){
             // nops for everything
+            printILOCHelper(null, null);
         }
         // f0Prior is ready
         else if(f0Prior != null && f1Prior == null && bothPrior == null){
@@ -533,7 +536,7 @@ public class ILOCScheduler{
     // When a parent is done, checks if the children become ready
     public void handleChildren(DepGraphNode parent){
         List<DepGraphNode> seen = new ArrayList<>();
-        System.out.println("parent: " + parent.getILOCString());
+        //System.out.println("parent: " + parent.getILOCString());
         // For every node that depends on the parameterized node
         for (Pair<DepGraphNode, Integer> node : sinkToSource.get(parent)){
             DepGraphNode dependent = node.getItem1();
@@ -542,7 +545,7 @@ public class ILOCScheduler{
                 dependent.decrementOut();
                 // All nodes this node depends on are done 
                 if(dependent.getOutCount() == 0){
-                    System.out.println("Moving: " + dependent.getILOCString());
+                   // System.out.println("Moving: " + dependent.getILOCString());
                     moveToReady(dependent);
                 }
                 seen.add(dependent);
