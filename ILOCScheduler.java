@@ -291,21 +291,12 @@ public class ILOCScheduler{
         // both stores things that can go in either
         // only one output can happen at a time
         int cycle = 1;
-        Queue<DepGraphNode> active = new PriorityQueue<>();
+        List<DepGraphNode> active = new ArrayList<>();
         
         // Load in leaves into ready
         for(DepGraphNode node : sourceToSink.keySet()){
             if(sourceToSink.get(node).size() == 0){
-                if(node.getOp() == OpCode.STORE.getValue() || node.getOp() == OpCode.LOAD.getValue()){
-                        f0.add(node);
-                    }
-                    else if(node.getOp() == OpCode.MULT.getValue()){
-                        f1.add(node);
-                    }
-                    else{
-                        both.add(node);
-                    }
-                node.setStatus(1);
+                moveToReady(node);
             }
         }
         // While there's still something to schedule and something still running
@@ -313,60 +304,25 @@ public class ILOCScheduler{
             // pick an operation o for each functional unit move o from ready to active
             // Should be highest priority
             // look in all of them and take the two highest priority
-            DepGraphNode f0Prior = f0.peek();
-            DepGraphNode f1Prior = f1.peek();
-            DepGraphNode bothPrior = both.peek();
-            // nothing is ready
-            if(f0Prior != null && f1Prior == null && bothPrior == null){
-                // nops for everything
-            }
-            else if(f0Prior != null && f1Prior == null && bothPrior == null){
-                // Schedule only f0 in active
-                f0Prior = f0.poll();
-                // Set end cycle f0
-                f0Prior.setEndCycle(cycle);
-            }
-            else if(f0Prior != null && f1Prior != null && bothPrior == null){
-                // Schedule f0 and f1
-                f0Prior = f0.poll();
-                f1Prior = f1.poll();
-                // Set end cycle f0
-                f0Prior.setEndCycle(cycle);
-                // Set end cycle f1
-                f1Prior.setEndCycle(cycle);
-            }
-            else if(f0Prior != null && f1Prior != null && bothPrior != null){
-                // Check which two are biggest
-                // f0 f1
-                if(f0Prior.getPriority() > f1Prior.getPriority() && f0Prior.getPriority() > bothPrior.getPriority() && f1Prior.getPriority() > f0Prior.getPriority()){
-                    f0Prior = f0.poll();
-                    f1Prior = f1.poll();
-                    // Set end cycle f0
-                    f0Prior.setEndCycle(cycle);
-                    // Set end cycle f1
-                    f1Prior.setEndCycle(cycle);
-                }
-                // f0 both
-                else if(f0Prior.getPriority() > f1Prior.getPriority() && f0Prior.getPriority() > bothPrior.getPriority() && f1Prior.getPriority() < f0Prior.getPriority()) {
-                    f0Prior = f0.poll();
-                    bothPrior = both.poll();
-                    // Set end cycle f0
-                    f0Prior.setEndCycle(cycle);
-                    // Set end cycle f1
-                    bothPrior.setEndCycle(cycle);
-                }
-                // both f1 
-                else{
-                    f1Prior = f1.poll();
-                    bothPrior = both.poll();
-                    // Set end cycle f0
-                    f1Prior.setEndCycle(cycle);
-                    // Set end cycle f1
-                    bothPrior.setEndCycle(cycle);
-                }
-            }
-        }
+            moveToActive(cycle, active);
+            
+            // increment cycle
+            cycle = cycle + 1;
 
+            // find each op o in active that retires in this cycle and remove from active
+            for(DepGraphNode activeNode : active){
+                if(activeNode.getEndCycle() == cycle){
+                    activeNode.setStatus(3);
+                    handleChildren(activeNode);
+                }
+                // For each multi-cycle operation o in Active
+                else if(activeNode.getOp() == OpCode.LOAD.getValue() || activeNode.getOp() == OpCode.STORE.getValue() || activeNode.getOp() == OpCode.OUTPUT.getValue()){
+                    // check ops that depend on o for early releases
+                    // add any early releases to Ready
+                    earlyRelease(activeNode);
+                }
+            }
+        }             
     }
 
     // This is to ensure the out count for a store is correct during the building of the graph
@@ -397,33 +353,170 @@ public class ILOCScheduler{
         }
     }
 
+    public void moveToReady(DepGraphNode node){
+        if(node.getOp() == OpCode.STORE.getValue() || node.getOp() == OpCode.LOAD.getValue()){
+            f0.add(node);
+        }
+        else if(node.getOp() == OpCode.MULT.getValue()){
+            f1.add(node);
+        }
+        else{
+            both.add(node);
+        }
+        node.setStatus(1);
+    }
+
+    public void moveToActive(int cycle, List<DepGraphNode> active){
+        DepGraphNode f0Prior = f0.peek();
+        DepGraphNode f1Prior = f1.peek();
+        DepGraphNode bothPrior = both.peek();
+        // nothing is ready
+        if(f0Prior != null && f1Prior == null && bothPrior == null){
+            // nops for everything
+            }
+        // f0Prior is ready
+        else if(f0Prior != null && f1Prior == null && bothPrior == null){
+            // Schedule only f0 in active
+            f0Prior = f0.poll();
+            // Set end cycle f0
+            f0Prior.setEndCycle(cycle);
+            f0Prior.setStatus(2);
+            active.add(f0Prior);
+            printILOCHelper(f0Prior, null);
+        }
+        // f0Prior and f1Prior are ready
+        else if(f0Prior != null && f1Prior != null && bothPrior == null){
+            // Schedule f0 and f1
+            f0Prior = f0.poll();
+            f1Prior = f1.poll();
+            // Set end cycle f0
+            f0Prior.setEndCycle(cycle);
+            f0Prior.setStatus(2);
+            active.add(f0Prior);
+            // Set end cycle f1
+            f1Prior.setEndCycle(cycle);
+            f1Prior.setStatus(2);
+            active.add(f1Prior);
+            printILOCHelper(f0Prior, f1Prior);
+        }
+        // f0Prior and bothPrior are ready
+        else if(f0Prior != null && f1Prior == null && bothPrior != null){
+            // Schedule f0 and both
+            f0Prior = f0.poll();
+            bothPrior = both.poll();
+            // Set end cycle f0
+            f0Prior.setEndCycle(cycle);
+            f0Prior.setStatus(2);
+            active.add(f0Prior);
+            // Set end cycle both
+            bothPrior.setEndCycle(cycle);
+            bothPrior.setStatus(2);
+            active.add(bothPrior);
+            printILOCHelper(f0Prior, bothPrior);
+        }
+        // f1Prior is ready
+        else if(f0Prior == null && f1Prior != null && bothPrior == null){
+            // Schedule f1
+            f1Prior = f1.poll();
+            // Set end cycle f0
+            f1Prior.setEndCycle(cycle);
+            f1Prior.setStatus(2);
+            active.add(f1Prior);
+            printILOCHelper(null, f1Prior);
+        }
+        // f1Prior and bothPrior are ready 
+        else if(f0Prior == null && f1Prior != null && bothPrior != null){
+            // Schedule f1 and both
+            f1Prior = f1.poll();
+            bothPrior = both.poll();
+            // Set end cycle f0
+            f1Prior.setEndCycle(cycle);
+            f1Prior.setStatus(2);
+            active.add(f1Prior);
+            // Set end cycle both
+            bothPrior.setEndCycle(cycle);
+            bothPrior.setStatus(2);
+            active.add(bothPrior);
+            printILOCHelper(bothPrior, f1Prior);
+        }
+        // both is ready
+        else if(f0Prior == null && f1Prior == null && bothPrior != null){
+            bothPrior = both.poll();
+            // Set stuff
+            bothPrior.setEndCycle(cycle);
+            bothPrior.setStatus(2);
+            active.add(bothPrior);
+            // Check again again
+            DepGraphNode bothPrior2 = both.poll();
+            if(bothPrior != null){
+                bothPrior2.setEndCycle(cycle);
+                bothPrior2.setStatus(2);
+                active.add(bothPrior2);
+            }
+            printILOCHelper(bothPrior, bothPrior2);
+        }
+        // Everything is available
+        else if(f0Prior != null && f1Prior != null && bothPrior != null){
+            // Check which two are biggest
+            // f0 f1
+            if(f0Prior.getPriority() > f1Prior.getPriority() && f0Prior.getPriority() > bothPrior.getPriority() && f1Prior.getPriority() > f0Prior.getPriority()){
+                f0Prior = f0.poll();
+                f1Prior = f1.poll();
+                // Set end cycle f0
+                f0Prior.setEndCycle(cycle);
+                f0Prior.setStatus(2);
+                active.add(f0Prior);
+                // Set end cycle f1
+                f1Prior.setEndCycle(cycle);
+                f1Prior.setStatus(2);
+                active.add(f1Prior);
+                printILOCHelper(f0Prior, f1Prior);
+            }
+            // f0 both
+            else if(f0Prior.getPriority() > f1Prior.getPriority() && f0Prior.getPriority() > bothPrior.getPriority() && f1Prior.getPriority() < f0Prior.getPriority()) {
+                f0Prior = f0.poll();
+                bothPrior = both.poll();
+                // Set end cycle f0
+                f0Prior.setEndCycle(cycle);
+                f0Prior.setStatus(2);
+                active.add(f0Prior);
+                // Set end cycle f1
+                bothPrior.setEndCycle(cycle);
+                bothPrior.setStatus(2);
+                active.add(bothPrior);
+                printILOCHelper(f0Prior, bothPrior);
+            }
+            // both f1 
+            else{
+                f1Prior = f1.poll();
+                bothPrior = both.poll();
+                // Set end cycle f0
+                f1Prior.setEndCycle(cycle);
+                f1Prior.setStatus(2);
+                active.add(f1Prior);
+                // Set end cycle f1
+                bothPrior.setEndCycle(cycle);
+                bothPrior.setStatus(2);
+                active.add(bothPrior);
+                printILOCHelper(bothPrior, f1Prior);
+            }
+        }
+    }
+
     // Helper to print out what's active in a given cycle
-    public void printILOCHelper(DepGraphNode f0Node, DepGraphNode f1Node, boolean f0Changed, boolean f1Changed){
-        // f0 new f1 new
-        if(f0Node != null && f1Node != null && f0Changed && f1Changed){
+    public void printILOCHelper(DepGraphNode f0Node, DepGraphNode f1Node){
+        if(f0Node == null && f1Node == null){
+            System.out.println("[ nop; nop ]");
+        }
+        else if(f0Node == null && f1Node != null){
+            System.out.println("[ nop; "+ f1Node.getILOCString() + " ]");
+        }
+        else if(f0Node != null && f1Node == null){
+            System.out.println("[ " + f0Node.getILOCString() + "; nop ]");
+        }
+        else{
             System.out.println("[ " + f0Node.getILOCString() + "; " + f1Node.getILOCString() + " ]");
         }
-        // f0 multiop f1 empty
-        else if(f0Node != null && f1Node == null && !f0Changed){
-            System.out.println("[ nop; nop ]");
-        }
-        // f0 empty f1 multiOp
-        else if(f0Node == null && f1Node != null && !f1Changed){
-            System.out.println("[ nop; nop ]");
-        }
-        // f0 multiop f1 multiop
-        else if(!f0Changed && !f1Changed){
-            System.out.println("[ nop; nop ]");
-        }
-        // f0 multiop f1 new
-        else if(!f0Changed && f1Node != null && f1Changed){
-            System.out.println("[ nop; " + f1Node.getILOCString() + " ]");
-        }
-        // f0 new f1 multiop
-        else if(f0Node == null && f1Node != null){
-            System.out.println("[ " + f1Node.getILOCString() + "; nop ]");
-        }
-        
     }
 
     // When a parent is done, checks if the children become ready
@@ -434,16 +527,24 @@ public class ILOCScheduler{
             dependent.decrementOut();
             // All nodes this node depends on are done
             if(dependent.getOutCount() == 0){
-                if(dependent.getOp() == OpCode.STORE.getValue() || dependent.getOp() == OpCode.LOAD.getValue()){
-                    f0.add(dependent);
+                moveToReady(dependent);
+            }
+        }
+    }
+
+    // Looks through a memops dependents 
+    public void earlyRelease(DepGraphNode parent){
+        List<DepGraphNode> toMove = new ArrayList<>();
+        for(Pair<DepGraphNode, Integer> dependent : sinkToSource.get(parent)){
+            // Only add to toMove if it's a serial edge
+            // If you hit a data edge, remove it from toMove (becuase it still needs to wait
+            if(dependent.getItem2() == 1){
+                toMove.add(dependent.getItem1());
+            }
+            else{
+                if(toMove.contains(dependent.getItem1())){
+                    toMove.remove(dependent.getItem1());
                 }
-                else if(dependent.getOp() == OpCode.MULT.getValue()){
-                    f1.add(dependent);
-                }
-                else{
-                    both.add(dependent);
-                }
-                dependent.setStatus(1);
             }
         }
     }
