@@ -9,11 +9,11 @@ public class Main2 {
             }
             ILOCRenamer renamer = new ILOCRenamer(res);
             Integer maxVr = renamer.rename();
-            System.out.println(maxVr);
             //res.getItem1().printVRCodeRep();
             ILOCScheduler scheduler = new ILOCScheduler(res.getItem1(), maxVr);
             scheduler.buildGraph(); // call dot -T pdf graphText.dot > graphText.pdf
             scheduler.computePriorities();
+            scheduler.schedule();
         }
     }
 

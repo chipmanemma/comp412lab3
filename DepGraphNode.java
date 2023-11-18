@@ -17,12 +17,15 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
     }
 
     // Used to order nodes by priority
+    @Override
     public int compareTo(DepGraphNode other){
+        // Lower priority should go second
         if(this.priority < other.getPriority()){
-            return -1;
-        }
-        else if (this.priority > other.getPriority()){
             return 1;
+        }
+        // Higher priority should go first
+        else if (this.priority > other.getPriority()){
+            return -1;
         }
         return 0;
     }

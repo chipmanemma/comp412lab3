@@ -205,11 +205,11 @@ public class ILOCScheduler{
                 checkExistingEdge(node);
             }
         }
-        /*
+        
         for(DepGraphNode node: sourceToSink.keySet()){
-            System.out.println(node.getILOCString() + " In: " + node.getInCount() + " Out: " + node.getOutCount());
+            System.out.println(node.getILOCString() +  " Out: " + node.getOutCount());
         }
-        */
+        
     }
 
     // Compute priorities
@@ -232,7 +232,7 @@ public class ILOCScheduler{
                 else{
                     node.setPriority(1);
                 }
-                System.out.println(node.getILOCString() + " Priority: " + node.getPriority());
+                //System.out.println(node.getILOCString() + " Priority: " + node.getPriority());
             }
         }
 
@@ -272,7 +272,7 @@ public class ILOCScheduler{
                 child.getItem1().decrementIn();
                 if(child.getItem1().getInCount() == 0){
                     visit.add(child.getItem1());
-                    System.out.println(child.getItem1().getILOCString() + " Priority: " + child.getItem1().getPriority());
+                    //System.out.println(child.getItem1().getILOCString() + " Priority: " + child.getItem1().getPriority());
                 }
             }
         }
@@ -292,7 +292,8 @@ public class ILOCScheduler{
         // only one output can happen at a time
         int cycle = 1;
         List<DepGraphNode> active = new ArrayList<>();
-        
+        List<DepGraphNode> toRemove = new ArrayList<>();
+
         // Load in leaves into ready
         for(DepGraphNode node : sourceToSink.keySet()){
             if(sourceToSink.get(node).size() == 0){
@@ -301,6 +302,7 @@ public class ILOCScheduler{
         }
         // While there's still something to schedule and something still running
         while(f0.size() != 0 || f1.size() != 0 || both.size() != 0 || active.size() != 0){
+            //System.out.println("f0: " + f0.size() + " f1: " + f1.size() + " both: " + both.size() + " active: " + active.size());
             // pick an operation o for each functional unit move o from ready to active
             // Should be highest priority
             // look in all of them and take the two highest priority
@@ -308,12 +310,14 @@ public class ILOCScheduler{
             
             // increment cycle
             cycle = cycle + 1;
-
+            
+            toRemove.clear();
             // find each op o in active that retires in this cycle and remove from active
             for(DepGraphNode activeNode : active){
                 if(activeNode.getEndCycle() == cycle){
                     activeNode.setStatus(3);
                     handleChildren(activeNode);
+                    toRemove.add(activeNode);
                 }
                 // For each multi-cycle operation o in Active
                 else if(activeNode.getOp() == OpCode.LOAD.getValue() || activeNode.getOp() == OpCode.STORE.getValue() || activeNode.getOp() == OpCode.OUTPUT.getValue()){
@@ -321,6 +325,10 @@ public class ILOCScheduler{
                     // add any early releases to Ready
                     earlyRelease(activeNode);
                 }
+            }
+            // Remove all nodes that are done
+            for(DepGraphNode node : toRemove){
+                active.remove(node);
             }
         }             
     }
@@ -354,6 +362,7 @@ public class ILOCScheduler{
     }
 
     public void moveToReady(DepGraphNode node){
+        System.out.println("moving " + node.getILOCString() + " to ready");
         if(node.getOp() == OpCode.STORE.getValue() || node.getOp() == OpCode.LOAD.getValue()){
             f0.add(node);
         }
@@ -370,10 +379,11 @@ public class ILOCScheduler{
         DepGraphNode f0Prior = f0.peek();
         DepGraphNode f1Prior = f1.peek();
         DepGraphNode bothPrior = both.peek();
+        //System.out.println("f0 " + f0Prior + "\n" + "f1 " + f1Prior + "\n");
         // nothing is ready
-        if(f0Prior != null && f1Prior == null && bothPrior == null){
+        if(f0Prior == null && f1Prior == null && bothPrior == null){
             // nops for everything
-            }
+        }
         // f0Prior is ready
         else if(f0Prior != null && f1Prior == null && bothPrior == null){
             // Schedule only f0 in active
@@ -382,6 +392,7 @@ public class ILOCScheduler{
             f0Prior.setEndCycle(cycle);
             f0Prior.setStatus(2);
             active.add(f0Prior);
+            //System.out.println("Priority: " + f0Prior.getPriority());
             printILOCHelper(f0Prior, null);
         }
         // f0Prior and f1Prior are ready
@@ -448,7 +459,7 @@ public class ILOCScheduler{
             active.add(bothPrior);
             // Check again again
             DepGraphNode bothPrior2 = both.poll();
-            if(bothPrior != null){
+            if(bothPrior2 != null){
                 bothPrior2.setEndCycle(cycle);
                 bothPrior2.setStatus(2);
                 active.add(bothPrior2);
@@ -521,23 +532,25 @@ public class ILOCScheduler{
 
     // When a parent is done, checks if the children become ready
     public void handleChildren(DepGraphNode parent){
+        System.out.println("parent: " + parent.getILOCString());
         // For every node that depends on the parameterized node
         for (Pair<DepGraphNode, Integer> node : sinkToSource.get(parent)){
             DepGraphNode dependent = node.getItem1();
             dependent.decrementOut();
-            // All nodes this node depends on are done
+            // All nodes this node depends on are done 
             if(dependent.getOutCount() == 0){
+                System.out.println("Moving: " + dependent.getILOCString());
                 moveToReady(dependent);
             }
         }
     }
 
-    // Looks through a memops dependents 
+    // Looks through a memops dependents and performs any necessary early releases
     public void earlyRelease(DepGraphNode parent){
         List<DepGraphNode> toMove = new ArrayList<>();
         for(Pair<DepGraphNode, Integer> dependent : sinkToSource.get(parent)){
             // Only add to toMove if it's a serial edge
-            // If you hit a data edge, remove it from toMove (becuase it still needs to wait
+            // If you hit a data or conflict edge to a node with a serial edge, remove it from toMove (becuase it still needs to wait)
             if(dependent.getItem2() == 1){
                 toMove.add(dependent.getItem1());
             }
@@ -545,6 +558,15 @@ public class ILOCScheduler{
                 if(toMove.contains(dependent.getItem1())){
                     toMove.remove(dependent.getItem1());
                 }
+            }
+        }
+        for(DepGraphNode node : toMove){
+            // If the parent is the only one node is waiting on
+            if(node.getOutCount() == 1){
+                System.out.println("Early release " + node.getILOCString());
+                // Decrement it so if it get's decremented later on it will = -1 and not be moved to ready again
+                node.decrementOut();
+                moveToReady(node);
             }
         }
     }
