@@ -18,4 +18,26 @@ public class Pair<A, B> {
     public B getItem2() {
         return item2;
     }
+
+    public String toString(){
+        return "item 1: " + item1.toString() + " item2: "  + item2.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj){
+        if(this.getClass() != obj.getClass()){
+            return false;
+        }
+        Pair<?,?> otherPair = (Pair<?,?>)obj;
+        if(otherPair.getItem1().equals(this.item1) && otherPair.getItem2().equals(this.item2)){
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode(){
+        int hash = item1.hashCode();
+        return hash;
+    }
 }

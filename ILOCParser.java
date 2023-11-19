@@ -79,7 +79,7 @@ public class ILOCParser {
             //System.out.println("Next token is: " + word.getLexeme());
         }
         if (success) {
-            System.out.println("//Successful full parse");
+            //System.out.println("//Successful full parse");
             return new Pair<IRList, Integer>(ir, highestSR);
         }
         else {

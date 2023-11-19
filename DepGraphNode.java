@@ -2,7 +2,7 @@
 public class DepGraphNode implements Comparable<DepGraphNode>{
     private int[] nodeInfo;
     private int priority; // The number of cycles this will take plus all the ancestor node's priority
-    private int status; //0 = not ready, 1 = ready, 2 = active, 3 = done
+    //private int status; //0 = not ready, 1 = ready, 2 = active, 3 = done
     private int inEdges;
     private int outEdges;
     private int endCycle; // The cycle that this node operation should finish up
@@ -10,7 +10,7 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
     public DepGraphNode(int[] nodeInfo) {
         this.nodeInfo = nodeInfo;
         this.priority = 0;
-        this.status = 0;
+        //this.status = 0;
         this.inEdges = 0;
         this.outEdges = 0;
         this.endCycle = -1;
@@ -31,15 +31,22 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
     }
 
     // Checks equality for purposes of knowing if a node is the same as itself
+    @Override
     public boolean equals(Object obj){
         if(!(obj instanceof DepGraphNode)){
             return false;
         }
         DepGraphNode node = (DepGraphNode)obj;
-        if(node.getLine() == this.nodeInfo[OpInfoEnum.LINE.getValue()]){
+        if(node.getLine() == this.getLine()){
             return true;
         }
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = nodeInfo[OpInfoEnum.LINE.getValue()];
+        return hash;
     }
 
     // Used to get the associated ILOC operation
@@ -107,6 +114,7 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
         return this.priority;
     }
 
+    /*
     // Sets the status of the node
     // 0 = not ready, 1 = ready, 2 = active, 3 = done
     public void setStatus(int status){
@@ -117,29 +125,13 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
     public int getStatus(){
         return this.status;
     }
+    */
 
-    public String getILOCString(){
-        int opCode = this.nodeInfo[OpInfoEnum.OP.getValue()];
-        // load or store
-        if (opCode == OpCode.LOAD.getValue() || opCode == OpCode.STORE.getValue()) {
-            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " r"+ this.nodeInfo[OpInfoEnum.VR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
-        }
-        // loadI
-        else if (opCode == OpCode.LOADI.getValue()) {
-            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " " + this.nodeInfo[OpInfoEnum.SR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
-        }
-        // Arithops
-        else if (opCode >= 3 && opCode <= 7) {
-            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " r" + this.nodeInfo[OpInfoEnum.VR1.getValue()] + ", r" + this.nodeInfo[OpInfoEnum.VR2.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
-        }
-        // output
-        else if (opCode == OpCode.OUTPUT.getValue()) {
-            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + this.nodeInfo[OpInfoEnum.SR1.getValue()];
-        }
-        return "";
+    public int[] getNodeInfo(){
+        return this.nodeInfo;
     }
 
-    public String toString(){
+    public String getGraphString(){
         int opCode = this.nodeInfo[OpInfoEnum.OP.getValue()];
         // load or store
         if (opCode == OpCode.LOAD.getValue() || opCode == OpCode.STORE.getValue()) {
@@ -161,5 +153,26 @@ public class DepGraphNode implements Comparable<DepGraphNode>{
         else {
             return "";
         }
+    }
+
+    public String toString(){
+        int opCode = this.nodeInfo[OpInfoEnum.OP.getValue()];
+        // load or store
+        if (opCode == OpCode.LOAD.getValue() || opCode == OpCode.STORE.getValue()) {
+            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " r"+ this.nodeInfo[OpInfoEnum.VR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
+        }
+        // loadI
+        else if (opCode == OpCode.LOADI.getValue()) {
+            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " " + this.nodeInfo[OpInfoEnum.SR1.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
+        }
+        // Arithops
+        else if (opCode >= 3 && opCode <= 7) {
+            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " r" + this.nodeInfo[OpInfoEnum.VR1.getValue()] + ", r" + this.nodeInfo[OpInfoEnum.VR2.getValue()] + " => r" + this.nodeInfo[OpInfoEnum.VR3.getValue()];
+        }
+        // output
+        else if (opCode == OpCode.OUTPUT.getValue()) {
+            return OpCode.getLabelFromValue(this.nodeInfo[OpInfoEnum.OP.getValue()]) + " " + this.nodeInfo[OpInfoEnum.SR1.getValue()];
+        }
+        return "";
     }
 }

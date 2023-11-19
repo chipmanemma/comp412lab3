@@ -10,6 +10,7 @@ public class Main2 {
             ILOCRenamer renamer = new ILOCRenamer(res);
             Integer maxVr = renamer.rename();
             //res.getItem1().printVRCodeRep();
+            //System.out.println("asldkjfslk");
             ILOCScheduler scheduler = new ILOCScheduler(res.getItem1(), maxVr);
             scheduler.buildGraph(); // call dot -T pdf graphText.dot > graphText.pdf
             scheduler.computePriorities();
@@ -35,7 +36,6 @@ public class Main2 {
                 return false;
             }
             else{
-                System.out.println("running");
                 return true;
             }
         }
